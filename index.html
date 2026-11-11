@@ -717,7 +717,7 @@ async function startCamera(mode){
   if (camStream){ camStream.getTracks().forEach(t => t.stop()); camStream = null; }
   front = mode === 'user';
   video.classList.toggle('mirror', front);
-  fireBtn.hidden = front;
+  syncFire();
   try {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('nomedia');
     camStream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:mode } }, audio:false });
@@ -917,6 +917,16 @@ aimBtn.addEventListener('click', () => setAim(false));
 codeInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing){ e.preventDefault(); joinRoom(); } });
 
 const fireBtn = document.getElementById('fire');
+function syncFire(){
+  const wp = document.getElementById('wordPanel'), pp = document.getElementById('pairPanel');
+  fireBtn.hidden = front || !wp.hidden || !pp.hidden;
+  if (fireBtn.hidden && fireHeld){ fireHeld = false; fireBtn.classList.remove('active'); }
+}
+if ('MutationObserver' in window){
+  const mo = new MutationObserver(syncFire);
+  mo.observe(document.getElementById('wordPanel'), { attributes:true, attributeFilter:['hidden'] });
+  mo.observe(document.getElementById('pairPanel'), { attributes:true, attributeFilter:['hidden'] });
+}
 const barEl = document.querySelector('.bar');
 function placeAboveBar(){
   const r = barEl.getBoundingClientRect();
