@@ -155,6 +155,7 @@ button:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
     <button class="round" id="mic" aria-pressed="false">息で吹く<span class="meter" id="meter"></span></button>
     <button class="round" id="wordBtn" aria-pressed="false">ことば</button>
     <button class="round" id="pairBtn" aria-pressed="false">ふたりで</button>
+    <button class="round" id="cleanBtn">UIを消す</button>
   </div>
   <div class="panel" id="pairPanel" hidden>
     <label for="code">ふたりで遊ぶ</label>
@@ -318,9 +319,18 @@ function hitTest(px, py){
 /* ---------- タッチ操作 ---------- */
 let started = false;
 cvs.addEventListener('contextmenu', e => e.preventDefault());
+let uiHidden = false;
+const activePointers = new Set();
 cvs.addEventListener('pointerdown', e => {
   if (!started) return;
   e.preventDefault();
+  activePointers.add(e.pointerId);
+  if (uiHidden && activePointers.size >= 2){
+    for (const id of holds.keys()) holds.set(id, null);
+    holds.set(e.pointerId, null);
+    showUI();
+    return;
+  }
   try { cvs.setPointerCapture(e.pointerId); } catch(err){}
   const hit = hitTest(e.clientX, e.clientY);
   if (hit){ popBubble(hit, .5); holds.set(e.pointerId, null); return; }
@@ -335,6 +345,7 @@ cvs.addEventListener('pointermove', e => {
   if (b){ b.sx = e.clientX; b.sy = e.clientY; }
 });
 function release(e){
+  activePointers.delete(e.pointerId);
   if (!holds.has(e.pointerId)) return;
   const b = holds.get(e.pointerId); holds.delete(e.pointerId);
   if (!b || b.state !== 'grow') return;
@@ -916,6 +927,20 @@ joinBtn.addEventListener('click', joinRoom);
 aimBtn.addEventListener('click', () => setAim(false));
 codeInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing){ e.preventDefault(); joinRoom(); } });
 
+const hudEl = document.getElementById('hud');
+function hideUI(){
+  document.getElementById('wordPanel').hidden = true;
+  document.getElementById('pairPanel').hidden = true;
+  fireHeld = false; fireBtn.classList.remove('active');
+  uiHidden = true;
+  hudEl.classList.remove('on');
+}
+function showUI(){
+  uiHidden = false;
+  hudEl.classList.add('on');
+  placeAboveBar();
+}
+document.getElementById('cleanBtn').addEventListener('click', hideUI);
 const fireBtn = document.getElementById('fire');
 function syncFire(){
   const wp = document.getElementById('wordPanel'), pp = document.getElementById('pairPanel');
