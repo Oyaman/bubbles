@@ -324,6 +324,10 @@ const activePointers = new Set();
 cvs.addEventListener('pointerdown', e => {
   if (!started) return;
   e.preventDefault();
+  if (e.pointerType === 'mouse' && e.button !== 0){
+    if (uiHidden && e.button === 2) showUI();
+    return;
+  }
   activePointers.add(e.pointerId);
   if (uiHidden && activePointers.size >= 2){
     for (const id of holds.keys()) holds.set(id, null);
@@ -352,16 +356,10 @@ function release(e){
   const dir = rayFromScreen(b.sx, b.sy);
   const t = (b.r - R_MIN) / (R_MAX - R_MIN);
   launch(b, dir, 1.05 - 0.75*t);
-  if (b.held < 0.18){
-    const j = 0.06;
-    const d2 = [dir[0] + (Math.random()-.5)*j, dir[1] + (Math.random()-.5)*j, dir[2] + (Math.random()-.5)*j];
-    const n = Math.hypot(...d2);
-    const c = makeBubble(b.p.slice(), R_MIN * (0.5 + Math.random()*0.4));
-    launch(c, [d2[0]/n, d2[1]/n, d2[2]/n], 0.9 + Math.random()*0.4);
-  }
 }
 cvs.addEventListener('pointerup', release);
 cvs.addEventListener('pointercancel', release);
+addEventListener('keydown', e => { if (e.key === 'Escape' && uiHidden) showUI(); });
 cvs.addEventListener('keydown', e => {
   if (!started || (e.key !== ' ' && e.key !== 'Enter')) return;
   e.preventDefault();
